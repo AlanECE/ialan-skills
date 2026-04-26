@@ -1,5 +1,8 @@
 # Donchian Breakout — Règles Complètes & Risk Management
 
+**Version:** 3.0.0
+**Mise à jour:** 2026-04-20
+
 ## Théorie
 
 Le Donchian Channel (Richard Donchian, 1960s) trace le plus haut et le plus bas sur N périodes.
@@ -92,9 +95,62 @@ Taille = $2,000 / $7,000 = 0.286 BTC
 
 ---
 
-## Filtres Optionnels (améliorations documentées)
+## Filtres ACTIFS (v3.0 — activés par défaut)
 
-Ces filtres ne sont PAS actifs par défaut. Les implémenter uniquement si l'utilisateur le demande.
+Ces 4 filtres sont **ACTIFS** et appliqués avant chaque signal. Ils réduisent les faux breakouts et protègent le capital.
+
+### 🔥 1. Filtre ATR "Volatility Regime" (ACTIF)
+```
+SI ATR(14) < SMA(ATR, 50) → Signal bloqué (volatilité insuffisante)
+```
+**Calcul:**
+- ATR(14) = Average True Range sur 14 périodes
+- SMA(ATR, 50) = moyenne mobile de l'ATR sur 50 périodes
+
+**Raison:** Les breakouts en faible volatilité sont des faux signaux. Ce filtre désactive automatiquement la stratégie en marché latéral.
+
+**Impact:** Réduit les faux breakouts de ~50-60%
+
+---
+
+### 🔥 2. Filtre Volume Ratio 1.5x (ACTIF)
+```
+SI volume < 1.5 × SMA(volume, 20) → Signal bloqué (conviction insuffisante)
+```
+**Calcul:**
+- Volume actuel = volume de la barre en cours
+- SMA(volume, 20) = moyenne mobile du volume sur 20 périodes
+- Seuil = 1.5 × moyenne (pas juste > moyenne)
+
+**Raison:** Un breakout sur volume 1.1x est un piège. Un breakout sur volume 1.8x montre une vraie conviction du marché.
+
+**Impact:** Élimine les breakouts sans participation réelle
+
+---
+
+### 🔥 3. Stop Temporel (ACTIF)
+```
+SI position ouverte depuis > 24h ET P/L < +2% → Fermer position automatiquement
+```
+**Raison:** Un breakout valide bouge rapidement. Si le prix stagne 24h sans gain, c'est un faux breakout. Mieux vaut sortir et préserver le capital.
+
+**Impact:** Réduit le temps d'exposition aux faux breakouts, libère le capital plus vite
+
+---
+
+### 🔥 4. Période de Cooldown (ACTIF)
+```
+APRÈS fermeture d'une position → Attendre 12h avant nouveau signal
+```
+**Raison:** Après un stop-loss, le marché est souvent instable. Ce délai empêche le "revenge trading" automatique et laisse la poussière retomber.
+
+**Impact:** Réduit les pertes consécutives après un mauvais trade
+
+---
+
+## Filtres Optionnels (non activés par défaut)
+
+Ces filtres supplémentaires sont disponibles mais **NON ACTIFS**. Les activer uniquement sur demande explicite.
 
 ### 1. Filtre RSI (réduction des faux breakouts)
 ```

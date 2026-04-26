@@ -7,8 +7,8 @@ description: |
   système de trading automatisé Donchian.
 metadata:
   author: community
-  version: "2.0.0"
-  tags: [trading, donchian, breakout, crypto, trend-following, strategy]
+  version: "3.0.0"
+  tags: [trading, donchian, breakout, crypto, trend-following, strategy, atr-filter, volume-filter]
 ---
 
 # Donchian Channel Breakout — Skill Stratégie
@@ -43,10 +43,26 @@ Donchian 20-Low  = MIN de tous les champs "l" (low)
 Prix actuel      = dernier champ "c" (close)
 ```
 
-### Règles de signal
+### Règles de signal (avec filtres actifs v3.0)
+
+**Étape 1 — Vérifier le cooldown:**
+```
+SI dernière fermeture de position < 12h → Signal bloqué (cooldown)
+```
+
+**Étape 2 — Vérifier les filtres d'entrée (pour ACHAT uniquement):**
 
 ```
-SI pas de position ET close > Donchian 20-High :
+Filtre ATR (volatilité):
+  SI ATR(14) < SMA(ATR, 50) → Signal bloqué (volatilité insuffisante)
+
+Filtre Volume:
+  SI volume < 1.5 × SMA(volume, 20) → Signal bloqué (volume insuffisant)
+```
+
+**Étape 3 — Calculer le signal Donchian:**
+```
+SI pas de position ET close > Donchian 20-High ET filtres OK :
     → Signal : ACHAT
     → Action : Ordre MARKET BUY
 
@@ -57,6 +73,13 @@ SI position ouverte ET close < Donchian 20-Low :
 SINON :
     → Signal : AUCUN
     → Action : Ne rien faire
+```
+
+**Étape 4 — Vérifier le stop temporel (si position ouverte):**
+```
+SI position ouverte depuis > 24h ET P/L < +2% :
+    → Signal : VENTE FORCÉE (stop temporel)
+    → Action : Ordre MARKET SELL (toute la position)
 ```
 
 ### Exécution des ordres
